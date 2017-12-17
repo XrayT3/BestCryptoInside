@@ -343,6 +343,12 @@ def show_info(call):
 
 def change15(message):
     try:
+        db = connect()
+        cur = db.cursor()
+        r = "UPDATE prices SET price=%s WHERE days=15"
+        cur.execute(r, float(message.text))
+        db.commit()
+        db.close()
         const.days15 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
     except ValueError:
@@ -351,6 +357,12 @@ def change15(message):
 
 def change30(message):
     try:
+        db = connect()
+        cur = db.cursor()
+        r = "UPDATE prices SET price=%s WHERE days=30"
+        cur.execute(r, float(message.text))
+        db.commit()
+        db.close()
         const.days30 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
     except ValueError:
@@ -359,6 +371,12 @@ def change30(message):
 
 def change60(message):
     try:
+        db = connect()
+        cur = db.cursor()
+        r = "UPDATE prices SET price=%s WHERE days=60"
+        cur.execute(r, float(message.text))
+        db.commit()
+        db.close()
         const.days60 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
     except ValueError:
@@ -367,6 +385,12 @@ def change60(message):
 
 def change90(message):
     try:
+        db = connect()
+        cur = db.cursor()
+        r = "UPDATE prices SET price=%s WHERE days=90"
+        cur.execute(r, float(message.text))
+        db.commit()
+        db.close()
         const.days90 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
     except ValueError:
@@ -375,6 +399,12 @@ def change90(message):
 
 def change_forever(message):
     try:
+        db = connect()
+        cur = db.cursor()
+        r = "UPDATE prices SET price=%s WHERE days=0"
+        cur.execute(r, float(message.text))
+        db.commit()
+        db.close()
         const.days_forever = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
     except ValueError:
@@ -425,6 +455,7 @@ def turn_on_demo(call):
     r = "SELECT state FROM demo"
     cur.execute(r)
     state = int(cur.fetchone()[0])
+    db.close()
     if state:
         bot.send_message(call.message.chat.id, "Демо режим уже включен", reply_markup=markups.adminPanel())
     else:
@@ -439,6 +470,7 @@ def turn_off(call):
     r = "SELECT state, days FROM demo"
     cur.execute(r)
     state, days = cur.fetchone()
+    db.close()
     if state:
         bot.send_message(call.message.chat.id, "Демо режим будет работать для пользователей еще %s дней" % str(days),
                          reply_markup=markups.adminPanel())
@@ -596,6 +628,7 @@ def inv_users(call):
     r = "SELECT INVITED FROM INVITATIONS WHERE ID = %s"
     cur.execute(r, str(call.message.chat.id))
     inv_ids = cur.fetchall()
+    db.close()
     if inv_ids:
         s = "Вы пригласили: \n"
         for id in inv_ids:
@@ -618,6 +651,7 @@ def show_videos(message):
     r = "SELECT link FROM VIDEO"
     cur.execute(r)
     data = cur.fetchall()
+    db.close()
     for i in data:
         bot.send_message(message.chat.id, i[0])
         time.sleep(1)
@@ -642,6 +676,7 @@ def subscription_status(msg):
     r = "SELECT end_date FROM payments WHERE uid = %s"
     cur.execute(r, msg.chat.id)
     end = cur.fetchone()
+    db.close()
     if end:
         now = time.time()  # Время в секундах настоящее
         sub_date = time.strptime(end[0], "%Y-%m-%d")  # Время в struct_time подписки
@@ -753,7 +788,8 @@ def create_btc_address():
 
 
 def send_payment_message(cid):
-    bot.send_message(256711367, "Сообщение отправлено из блока send_payment_message с переданным сюда параметром "+cid)
+    bot.send_message(256711367,
+                     "Сообщение отправлено из блока send_payment_message с переданным сюда параметром " + cid)
 
 
 # if __name__ == '__main__':
@@ -776,6 +812,18 @@ def init_bot():
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
     context.load_cert_chain(WEBHOOK_SSL_CERT, WEBHOOK_SSL_PRIV)
+
+    db = connect()
+    cur = db.cursor()
+    r = "SELECT * FROM prices ORDER BY days"
+    cur.execute(r)
+    prices = cur.fetchall()
+    const.days_forever = float(prices[0][1])
+    const.days15 = float(prices[1][1])
+    const.days30 = float(prices[2][1])
+    const.days60 = float(prices[3][1])
+    const.days90 = float(prices[4][1])
+    db.close()
 
     web.run_app(
         app,
