@@ -10,6 +10,7 @@ def startMenu(uid):
         markup.row("👤 Админ-панель")
     return markup
 
+
 def mainMenu(uid):
     markup = telebot.types.ReplyKeyboardMarkup(True, False)
     markup.row("📈 О BestCryptoInsideBot")
@@ -121,7 +122,7 @@ def usersTypes():
     btn_paid = telebot.types.InlineKeyboardButton(text="Пользователи купившие подписку", callback_data="users_paid")
     btn_not_paid = telebot.types.InlineKeyboardButton(text="Пользователи без подписки", callback_data="users_not_paid")
     menu = telebot.types.InlineKeyboardButton(text="Меню", callback_data="admin")
-    markup.add(btn_all, btn_paid, btn_not_paid)
+    markup.add(btn_all, btn_paid, btn_not_paid, menu)
     return markup
 
 
