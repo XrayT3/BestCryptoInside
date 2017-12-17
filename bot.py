@@ -25,7 +25,7 @@ WEBHOOK_URL_BASE = "https://{}:{}".format(WEBHOOK_HOST, WEBHOOK_PORT)
 WEBHOOK_URL_PATH = "/{}/".format(const.token)
 
 logger = telebot.logger
-telebot.logger.setLevel(logging.INFO)
+telebot.logger.setLevel(level=logging.INFO)
 
 loggerPy = logging.getLogger('bot.py')
 loggerPy.setLevel(logging.DEBUG)
@@ -123,7 +123,7 @@ def start(message):
     db.close()
 
 
-def getUserBalance(uid):
+def get_user_balance(uid):
     db = connect()
     cur = db.cursor()
     r = "SELECT balance FROM users WHERE uid = %s"
@@ -133,7 +133,7 @@ def getUserBalance(uid):
     return balance[0] / 100000000
 
 
-def getIds():
+def get_ids():
     db = connect()
     cur = db.cursor()
     r = "SELECT uid FROM users"
@@ -146,7 +146,7 @@ def getIds():
     return res
 
 
-def getPaidIds():
+def get_paid_ids():
     db = connect()
     cur = db.cursor()
     r = "SELECT uid FROM payments"
@@ -159,7 +159,7 @@ def getPaidIds():
     return res
 
 
-def getLostSubsIds():
+def get_lost_subs_ids():
     db = connect()
     cur = db.cursor()
     r = "SELECT uid FROM lost_subs"
@@ -186,21 +186,21 @@ def admin2(call):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "addVideo")
-def addVideo(call):
+def add_video(call):
     msg = bot.send_message(call.message.chat.id, "Введите ссылку на видео")
-    bot.register_next_step_handler(msg, getVideo)
+    bot.register_next_step_handler(msg, get_video)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "usersTypes")
-def userTypes(call):
+def user_types(call):
     bot.edit_message_text("Список пользователей", call.message.chat.id, call.message.message_id,
                           reply_markup=markups.usersTypes())
 
 
 @bot.callback_query_handler(func=lambda call: call.data[:5] == "users")
-def showUsers(call):
+def show_users(call):
     const.listPointer = 0
-    getUsers(call.data[6:])
+    get_users(call.data[6:])
     bot.edit_message_text("Список пользователей", call.message.chat.id, call.message.message_id)
     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markups.users())
 
@@ -217,14 +217,14 @@ def listback(call):
     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markups.users())
 
 
-def getUsers(type):
+def get_users(user_type):
     db = connect()
     cur = db.cursor()
     r = "SELECT * FROM users"
     cur.execute(r)
     data = cur.fetchall()
 
-    if type == "paid":
+    if user_type == "paid":
         r = "SELECT * FROM payments"
         cur.execute(r)
         data_paid = cur.fetchall()
@@ -244,7 +244,7 @@ def getUsers(type):
                     s += str(delta) + '%' + str(user[0])
                     const.userList.append(s)
         return const.userList
-    elif type == "not_paid":
+    elif user_type == "not_paid":
         r = "SELECT * FROM payments"
         cur.execute(r)
         data_paid = cur.fetchall()
@@ -272,7 +272,7 @@ def getUsers(type):
 
 
 @bot.callback_query_handler(func=lambda call: call.data[0] == '<')
-def detailedInfo(call):
+def detailed_info(call):
     db = connect()
     cur = db.cursor()
     r = "SELECT * FROM payments WHERE uid = %s"
@@ -310,14 +310,14 @@ def detailedInfo(call):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "changePrices")
-def changePrices(call):
+def change_prices(call):
     bot.edit_message_text("Изменить цену на подписку", call.message.chat.id, call.message.message_id)
     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id,
                                   reply_markup=markups.chooseMonth())
 
 
 @bot.callback_query_handler(func=lambda call: call.data[0:2] == "$$")
-def showInfo(call):
+def show_info(call):
     text = "Текущая цена подписки: {price}\nВведите новую цену в биткойнах, цифры разделены точкой (0.15)"
     if call.data[2:] == "15":
         text = text.format(price=str(const.days15))
@@ -345,7 +345,7 @@ def change15(message):
     try:
         const.days15 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неправильный формат", reply_markup=markups.adminPanel())
 
 
@@ -353,7 +353,7 @@ def change30(message):
     try:
         const.days30 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неправильный формат", reply_markup=markups.adminPanel())
 
 
@@ -361,7 +361,7 @@ def change60(message):
     try:
         const.days60 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неправильный формат", reply_markup=markups.adminPanel())
 
 
@@ -369,7 +369,7 @@ def change90(message):
     try:
         const.days90 = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неправильный формат", reply_markup=markups.adminPanel())
 
 
@@ -377,12 +377,12 @@ def change_forever(message):
     try:
         const.days_forever = float(message.text)
         bot.send_message(message.chat.id, "Цена изменена", reply_markup=markups.adminPanel())
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неправильный формат", reply_markup=markups.adminPanel())
 
 
 @bot.callback_query_handler(func=lambda call: call.data[0:10] == "changeDate")
-def changeDate(call):
+def change_date(call):
     const.chosenUserId = call.data[10:]
     msg = bot.send_message(call.message.chat.id, "Введите дату формате 2017-03-23 <b>(гггг-мм-дд)</b>\n",
                            parse_mode="html")
@@ -408,7 +408,7 @@ def confirm_date(message):
         bot.send_message(message.chat.id, "Неправильный формат ввода", reply_markup=markups.adminPanel())
 
 
-def getVideo(message):
+def get_video(message):
     db = connect()
     cur = db.cursor()
     r = 'INSERT INTO VIDEO (link) VALUES (%s)'
@@ -473,19 +473,19 @@ def handle_days(message):
         db.close()
         bot.send_message(message.chat.id, "Демо режим включен для всех пользователей на %s дней" % message.text,
                          reply_markup=markups.adminPanel())
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неправильный формат")
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "toAll")
-def getText(call):
+def get_text(call):
     msg = bot.send_message(call.message.chat.id, "Введите текст, который хотите отправить всем пользователям")
-    bot.register_next_step_handler(msg, simpleDistribution)
+    bot.register_next_step_handler(msg, simple_distribution)
 
 
-def simpleDistribution(message):
+def simple_distribution(message):
     count = 0
-    for user_id in getIds():
+    for user_id in get_ids():
         if user_id in const.admin:
             continue
         if count == 20:
@@ -496,15 +496,15 @@ def simpleDistribution(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "toPaid")
-def getText1(call):
+def get_text1(call):
     msg = bot.send_message(call.message.chat.id, "Введите текст, который хотите отправить пользователям,"
                                                  " которые оплатили подписку")
-    bot.register_next_step_handler(msg, paidDistribution)
+    bot.register_next_step_handler(msg, paid_distribution)
 
 
-def paidDistribution(message):
+def paid_distribution(message):
     count = 0
-    for user_id in getPaidIds():
+    for user_id in get_paid_ids():
         if user_id in const.admin:
             continue
         if count == 20:
@@ -515,15 +515,15 @@ def paidDistribution(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "toLostSubs")
-def getText2(call):
+def get_text2(call):
     msg = bot.send_message(call.message.chat.id, "Введите текст, который хотите отправить пользователям,"
                                                  " у которых кончилась подписка")
-    bot.register_next_step_handler(msg, lostSubsDistribution)
+    bot.register_next_step_handler(msg, lost_subs_distribution)
 
 
-def lostSubsDistribution(message):
+def lost_subs_distribution(message):
     count = 0
-    for user_id in getLostSubsIds():
+    for user_id in get_lost_subs_ids():
         if user_id in const.admin:
             continue
         if count == 20:
@@ -534,15 +534,15 @@ def lostSubsDistribution(message):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "toNotPaid")
-def getText3(call):
+def get_text3(call):
     msg = bot.send_message(call.message.chat.id, "Введите текст, который хотите отправить пользователям,"
                                                  " которые не оплатили подписку")
-    bot.register_next_step_handler(msg, notPaidDistribution)
+    bot.register_next_step_handler(msg, not_paid_distribution)
 
 
-def notPaidDistribution(message):
+def not_paid_distribution(message):
     count = 0
-    getUsers("not_paid")
+    get_users("not_paid")
     for user in const.userList:
         symbol = user.find('%')
         uid = int(user[symbol + 1:])
@@ -558,7 +558,7 @@ def notPaidDistribution(message):
 # Первая клавиатура
 @bot.message_handler(regexp="👥 Партнерская программа")
 def materials(message):
-    balance = "<b>Ваш баланс:</b> %s BTC\n" % getUserBalance(message.chat.id)
+    balance = "<b>Ваш баланс:</b> %s BTC\n" % get_user_balance(message.chat.id)
     text = "<b>Ваша реферальная ссылка:</b>\nhttps://t.me/BestCryptoInsideBot?start=%s" % message.chat.id
     bot.send_message(message.chat.id, const.marketingMsg + balance + text, parse_mode="html",
                      reply_markup=markups.withdrawBtn())
@@ -567,23 +567,23 @@ def materials(message):
 @bot.callback_query_handler(func=lambda call: call.data == "withdraw")
 def withdraw(call):
     msg = bot.send_message(call.message.chat.id, "Введите сумму, которую хотите вывести")
-    bot.register_next_step_handler(msg, checkSum)
+    bot.register_next_step_handler(msg, check_sum)
 
 
-def checkSum(message):
+def check_sum(message):
     try:
         value = float(message.text)
-        if value <= getUserBalance(message.chat.id) and value > 0:
+        if get_user_balance(message.chat.id) >= value > 0:
             const.values[message.chat.id] = value
             msg = bot.send_message(message.chat.id, "Введите адрес, на который будет произведена выплата")
-            bot.register_next_step_handler(msg, sendRequest)
+            bot.register_next_step_handler(msg, send_request)
         else:
             bot.send_message(message.chat.id, "Недостаточно средств")
     except:
         bot.send_message(message.chat.id, "Неккоректная сумма")
 
 
-def sendRequest(message):
+def send_request(message):
     bot.send_message(const.admin[0], "Новая заявка на вывод %s BTC на адрес %s"
                      % (const.values.get(message.chat.id), message.text))
     bot.send_message(message.chat.id, "Ваша заявка отпралена!\nОжидайте подтверждения.")
@@ -612,7 +612,7 @@ def inv_users(call):
 
 
 @bot.message_handler(regexp="Посмотреть отзывы")
-def showVideos(message):
+def show_videos(message):
     db = connect()
     cur = db.cursor()
     r = "SELECT link FROM VIDEO"
@@ -624,8 +624,8 @@ def showVideos(message):
 
 
 @bot.message_handler(regexp="Начать работу")
-def startWork(message):
-    msg = bot.send_message(message.chat.id, "Текст 2 ", reply_markup=markups.mainMenu(message.chat.id))
+def start_work(message):
+    bot.send_message(message.chat.id, "Текст 2 ", reply_markup=markups.mainMenu(message.chat.id))
 
 
 # Вторая клавиатура
@@ -653,7 +653,7 @@ def subscription_status(msg):
 
 
 @bot.message_handler(regexp="🌏 Купить VIP подписку")
-def buyVip(message):
+def buy_vip(message):
     bot.send_message(message.chat.id, const.startWorkMsg,
                      reply_markup=markups.startWork())
 
@@ -686,33 +686,33 @@ def results(msg):
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "conditions")
-def showConditions(call):
+def show_conditions(call):
     bot.send_message(call.message.chat.id, const.conditionsMsg)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "news")
-def channelLink(call):
+def channel_link(call):
     bot.send_message(call.message.chat.id, const.channelLink)
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "socialNetworks")
-def showMedia(call):
+def show_media(call):
     bot.edit_message_text("текст", call.message.chat.id, call.message.message_id)
     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markups.socialNetworks())
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "profit")
-def showProfit(call):
+def show_profit(call):
     bot.send_message(call.message.chat.id, "Выберите подписку", reply_markup=markups.chooseDuration())
 
 
 @bot.callback_query_handler(func=lambda call: call.data == "processPayment")
-def chooseDuration(call):
+def choose_duration(call):
     bot.send_message(call.message.chat.id, const.profitMsg, reply_markup=markups.payBtnMarkup())
 
 
 @bot.callback_query_handler(func=lambda call: call.data[:4] == "days")
-def processPayment(call):
+def process_payment(call):
     days = call.data[4:]
     if days == "15":
         pay = const.days15
@@ -724,7 +724,7 @@ def processPayment(call):
         pay = const.days90
     else:
         pay = const.days_forever
-    address = createBTCAddress()
+    address = create_btc_address()
     db = connect()
     cur = db.cursor()
     r = 'SELECT * FROM TEMP_DETAILS WHERE ID = %s'
@@ -740,7 +740,7 @@ def processPayment(call):
     bot.send_message(call.message.chat.id, const.paymentMsg.format(pay, address), parse_mode="html")
 
 
-def createBTCAddress():
+def create_btc_address():
     sign = hashlib.md5("".join((const.wallet_id, const.walletApiKey)).encode()).hexdigest()
     data = {
         "wallet_id": const.wallet_id,
@@ -753,7 +753,7 @@ def createBTCAddress():
 
 
 def send_payment_message(cid):
-    pass
+    bot.send_message(256711367, "Сообщение отправлено из блока send_payment_message с переданным сюда параметром "+cid)
 
 
 # if __name__ == '__main__':
