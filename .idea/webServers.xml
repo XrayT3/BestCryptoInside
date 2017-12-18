@@ -3,7 +3,7 @@
   <component name="WebServers">
     <option name="servers">
       <webServer id="1b900517-7382-4af6-bcd9-af187dad8a5c" name="Anton_bot-server" url="http://78.155.218.194">
-        <fileTransfer host="78.155.218.194" port="22" rootFolder="/root/traderBot" accessType="SFTP">
+        <fileTransfer host="78.155.218.194" port="22" rootFolder="/root/" accessType="SFTP">
           <advancedOptions>
             <advancedOptions dataProtectionLevel="Private" />
           </advancedOptions>

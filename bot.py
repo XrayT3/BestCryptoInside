@@ -590,6 +590,11 @@ def not_paid_distribution(message):
 # Первая клавиатура
 @bot.message_handler(regexp="👥 Партнерская программа")
 def materials(message):
+    cur = connect().cursor()
+    r = "SELECT ID FROM INVITATIONS WHERE INVITED=%s"
+    cur.execute(r, str(message.chat.id))
+    by_user = cur
+
     balance = "<b>Ваш баланс:</b> %s BTC\n" % get_user_balance(message.chat.id)
     text = "<b>Ваша реферальная ссылка:</b>\nhttps://t.me/BestCryptoInsideBot?start=%s" % message.chat.id
     bot.send_message(message.chat.id, const.marketingMsg + balance + text, parse_mode="html",
@@ -628,12 +633,11 @@ def inv_users(call):
     r = "SELECT INVITED FROM INVITATIONS WHERE ID = %s"
     cur.execute(r, str(call.message.chat.id))
     inv_ids = cur.fetchall()
-    db.close()
     if inv_ids:
         s = "Вы пригласили: \n"
         for id in inv_ids:
             r = "SELECT * FROM users WHERE uid=%s"
-            cur.execute(r, str(id[0]))
+            cur.execute(r, id[0])
             user = cur.fetchone()
             s += user[2]
             if user[3] is not None:
@@ -642,6 +646,7 @@ def inv_users(call):
             bot.edit_message_text(s, call.message.chat.id, call.message.message_id)
     else:
         bot.edit_message_text("Вы никого не пригласили", call.message.chat.id, call.message.message_id)
+    db.close()
 
 
 @bot.message_handler(regexp="Посмотреть отзывы")
@@ -703,7 +708,11 @@ def support(msg):
 
 def send_to_support(message):
     if message.text.upper() != "ОТМЕНА":
-        bot.send_message(const.admin[0], "Новое обращение в службу поддержки:\n" + message.text)
+        cur = connect().cursor()
+        r = "SELECT * FROM users WHERE uid = %s"
+        cur.execute(r, str(message.chat.id))
+        user = cur.fetchone()
+        bot.send_message(const.admin[0], "Новое обращение в службу поддержки:\n" + message.text + "\n\n" + user[2] + " @" + user[4])
         bot.send_message(message.chat.id, "Ваше сообщение принято на рассмотрение, "
                                           "администратор свяжетя с вами в ближайшее время.",
                          reply_markup=markups.mainMenu(message.chat.id))
