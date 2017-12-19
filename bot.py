@@ -172,6 +172,49 @@ def get_lost_subs_ids():
     return res
 
 
+def get_all_user(uid):
+    db = connect()
+    cur = db.cursor()
+    r = "SELECT * FROM users WHERE uid=%s"
+    cur.execute(r, uid)
+    user = cur.fetchone()
+    text = user[2]
+    if user[3]:
+        text += " " + user[3]
+    if user[4]:
+        text += "\n@" + user[4]
+    r = "SELECT * FROM payments WHERE uid = %s"
+    cur.execute(r, uid)
+    data = cur.fetchone()
+    if data:
+        now = time.time()  # Время в секундах настоящее
+        sub_date = time.strptime(data[1], "%Y-%m-%d")  # Время в struct_time подписки
+        sub_s = time.mktime(sub_date)  # Время подписки в секундах
+        delta = ceil((sub_s - now) / (60 * 60 * 24))
+
+        text += "\nКуплена подписка до %s\n" \
+                "Оставшееся количество дней: %s " % (data[1], str(delta))
+    else:
+        text += "\nУ данного пользователя не куплена подписка"
+    r = "SELECT INVITED FROM INVITATIONS WHERE ID = %s"
+    cur.execute(r, uid)
+    ids = cur.fetchall()
+    if ids:
+        text += "\nПригласил следующий список пользователей:\n"
+        for user in ids:
+            r = "SELECT first_name, last_name FROM users WHERE uid = %s"
+            cur.execute(r, user[0])
+            try:
+                text += "<b>" + " ".join(cur.fetchone()) + "</b>\n"
+            except TypeError:
+                pass
+                # text += "<b>" + str(user) + "</b>\n"
+    else:
+        text += "\nЕще не пригласил ни одного пользователя"
+    db.close()
+    return text
+
+
 # Admin
 @bot.message_handler(regexp="👤 Админ-панель")
 def admin(message):
@@ -237,10 +280,12 @@ def get_users(user_type):
                     sub_date = time.strptime(user_p[1], "%Y-%m-%d")  # Время в struct_time подписки
                     sub_s = time.mktime(sub_date)  # Время подписки в секундах
                     delta = ceil((sub_s - now) / (60 * 60 * 24))
-
-                    s = user[2] + ' '
-                    if user[3] is not None:
-                        s += user[3] + ' '
+                    if user[4] is not None:
+                        s = "@" + user[4]
+                    else:
+                        s = user[2] + ' '
+                        if user[3] is not None:
+                            s += user[3] + ' '
                     s += str(delta) + '%' + str(user[0])
                     const.userList.append(s)
         return const.userList
@@ -252,9 +297,12 @@ def get_users(user_type):
         db.close()
         for user in data:
             if user[0] not in [user_p[0] for user_p in data_paid]:
-                s = user[2] + ' '
-                if user[3] is not None:
-                    s += user[3] + ' '
+                if user[4] is not None:
+                    s = "@" + user[4]
+                else:
+                    s = user[2] + ' '
+                    if user[3] is not None:
+                        s += user[3] + ' '
                 s += '%' + str(user[0])
                 const.userList.append(s)
         return const.userList
@@ -262,9 +310,12 @@ def get_users(user_type):
         const.userList.clear()
         db.close()
         for user in data:
-            s = user[2] + ' '
-            if user[3] is not None:
-                s += user[3] + ' '
+            if user[4] is not None:
+                s = "@" + user[4]
+            else:
+                s = user[2] + ' '
+                if user[3] is not None:
+                    s += user[3] + ' '
             s += '%' + str(user[0])
             const.userList.append(s)
         const.userList.sort()
@@ -273,37 +324,7 @@ def get_users(user_type):
 
 @bot.callback_query_handler(func=lambda call: call.data[0] == '<')
 def detailed_info(call):
-    db = connect()
-    cur = db.cursor()
-    r = "SELECT * FROM payments WHERE uid = %s"
-    cur.execute(r, call.data[1:])
-    data = cur.fetchone()
-    if data:
-        now = time.time()  # Время в секундах настоящее
-        sub_date = time.strptime(data[1], "%Y-%m-%d")  # Время в struct_time подписки
-        sub_s = time.mktime(sub_date)  # Время подписки в секундах
-        delta = ceil((sub_s - now) / (60 * 60 * 24))
-
-        text = "Куплена подписка до %s\n" \
-               "Оставшееся количество дней: %s " % (data[1], str(delta))
-    else:
-        text = "У данного пользователя не куплена подписка"
-    r = "SELECT INVITED FROM INVITATIONS WHERE ID = %s"
-    cur.execute(r, call.data[1:])
-    ids = cur.fetchall()
-    if ids:
-        text += "\nПригласил следующий список пользователей:\n"
-        for user in ids:
-            r = "SELECT first_name, last_name FROM users WHERE uid = %s"
-            cur.execute(r, user[0])
-            try:
-                text += "<b>" + " ".join(cur.fetchone()) + "</b>\n"
-            except TypeError:
-                pass
-                # text += "<b>" + str(user) + "</b>\n"
-    else:
-        text += "\nЕще не пригласил ни одного пользователя"
-    db.close()
+    text = get_all_user(call.data[1:])
     bot.edit_message_text(text, call.message.chat.id, call.message.message_id, parse_mode="html")
     bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id,
                                   reply_markup=markups.showDetails(call.data[1:]))
@@ -725,7 +746,7 @@ def send_to_support(message):
         msg = "Новое обращение в службу поддержки:\n" + message.text + "\n\n" + user[0]
         if user[1] is not None:
             msg += " @"+user[1]
-        bot.send_message(const.sysadmin, msg)
+        bot.send_message(const.admin[0], msg)
         bot.send_message(message.chat.id, "Ваше сообщение принято на рассмотрение, "
                                           "администратор свяжетя с вами в ближайшее время.",
                          reply_markup=markups.mainMenu(message.chat.id))

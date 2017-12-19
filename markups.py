@@ -144,14 +144,14 @@ def users():
         back = telebot.types.InlineKeyboardButton(text="⬅️", callback_data="prevList")
         b = True
     menu = telebot.types.InlineKeyboardButton(text="Меню", callback_data="admin")
-    back = telebot.types.InlineKeyboardButton(text="Назад", callback_data="usersTypes")
+    back_to = telebot.types.InlineKeyboardButton(text="Назад", callback_data="usersTypes")
     if f and b:
         markup.row(back, forward)
     elif f:
         markup.row(forward)
     elif b:
         markup.row(back)
-    markup.row(back)
+    markup.row(back_to)
     markup.row(menu)
     return markup
 
