@@ -539,9 +539,12 @@ def paid_distribution(message):
     for user_id in get_paid_ids():
         if user_id in const.admin:
             continue
-        if count == 20:
+        if count % 20 == 0:
             time.sleep(1)
-        bot.send_message(user_id, message.text)
+        try:
+            bot.send_message(user_id, message.text)
+        except telebot.apihelper.ApiException as error:
+            bot.send_message(const.sysadmin, "547" + str(error))
         count += 1
     bot.send_message(message.chat.id, "Сообщение успешно отправлено всем пользователям!")
 
@@ -716,11 +719,13 @@ def support(msg):
 def send_to_support(message):
     if message.text.upper() != "ОТМЕНА":
         cur = connect().cursor()
-        r = "SELECT * FROM users WHERE uid = %s"
+        r = "SELECT first_name, alias FROM users WHERE uid = %s"
         cur.execute(r, str(message.chat.id))
         user = cur.fetchone()
-        bot.send_message(const.admin[0], "Новое обращение в службу поддержки:\n" + message.text + "\n\n" +
-                         user[2] + " @" + user[4])
+        msg = "Новое обращение в службу поддержки:\n" + message.text + "\n\n" + user[0]
+        if user[1] is not None:
+            msg += " @"+user[1]
+        bot.send_message(const.sysadmin, msg)
         bot.send_message(message.chat.id, "Ваше сообщение принято на рассмотрение, "
                                           "администратор свяжетя с вами в ближайшее время.",
                          reply_markup=markups.mainMenu(message.chat.id))
