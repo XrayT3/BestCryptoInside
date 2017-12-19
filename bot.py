@@ -89,7 +89,7 @@ def daily_check():
     db.close()
 
 
-def addInvitation(user_id, invited_user_id):
+def add_invitation(user_id, invited_user_id):
     db = connect()
     cur = db.cursor()
     r = "SELECT * FROM INVITATIONS WHERE INVITED=%s"
@@ -108,7 +108,7 @@ def start(message):
     if len(text) == 2:
         if text[1].isdigit():
             initial_id = text[1]
-            addInvitation(initial_id, message.chat.id)
+            add_invitation(initial_id, message.chat.id)
     db = connect()
     cur = db.cursor()
     r = 'SELECT * FROM users WHERE uid = %s'
@@ -298,7 +298,7 @@ def detailed_info(call):
             cur.execute(r, user[0])
             try:
                 text += "<b>" + " ".join(cur.fetchone()) + "</b>\n"
-            except Exception:
+            except TypeError:
                 pass
                 # text += "<b>" + str(user) + "</b>\n"
     else:
@@ -590,14 +590,21 @@ def not_paid_distribution(message):
 # Первая клавиатура
 @bot.message_handler(regexp="👥 Партнерская программа")
 def materials(message):
-    cur = connect().cursor()
+    db = connect()
+    cur = db.cursor()
     r = "SELECT ID FROM INVITATIONS WHERE INVITED=%s"
     cur.execute(r, str(message.chat.id))
-    by_user = cur
+    by_user = cur.fetchone()
+    inv_by = ""
+    if by_user:
+        r = "SELECT first_name, last_name from users WHERE uid=%s"
+        cur.execute(r, str(by_user[0]))
+        inv_by = "Вы приглашены пользователем " + " ".join(cur.fetchone()) + '\n\n'
+    db.close()
 
     balance = "<b>Ваш баланс:</b> %s BTC\n" % get_user_balance(message.chat.id)
     text = "<b>Ваша реферальная ссылка:</b>\nhttps://t.me/BestCryptoInsideBot?start=%s" % message.chat.id
-    bot.send_message(message.chat.id, const.marketingMsg + balance + text, parse_mode="html",
+    bot.send_message(message.chat.id, inv_by + const.marketingMsg + balance + text, parse_mode="html",
                      reply_markup=markups.withdrawBtn())
 
 
@@ -616,7 +623,7 @@ def check_sum(message):
             bot.register_next_step_handler(msg, send_request)
         else:
             bot.send_message(message.chat.id, "Недостаточно средств")
-    except:
+    except ValueError:
         bot.send_message(message.chat.id, "Неккоректная сумма")
 
 
@@ -635,9 +642,9 @@ def inv_users(call):
     inv_ids = cur.fetchall()
     if inv_ids:
         s = "Вы пригласили: \n"
-        for id in inv_ids:
+        for uid in inv_ids:
             r = "SELECT * FROM users WHERE uid=%s"
-            cur.execute(r, id[0])
+            cur.execute(r, uid[0])
             user = cur.fetchone()
             s += user[2]
             if user[3] is not None:
@@ -712,7 +719,8 @@ def send_to_support(message):
         r = "SELECT * FROM users WHERE uid = %s"
         cur.execute(r, str(message.chat.id))
         user = cur.fetchone()
-        bot.send_message(const.admin[0], "Новое обращение в службу поддержки:\n" + message.text + "\n\n" + user[2] + " @" + user[4])
+        bot.send_message(const.admin[0], "Новое обращение в службу поддержки:\n" + message.text + "\n\n" +
+                         user[2] + " @" + user[4])
         bot.send_message(message.chat.id, "Ваше сообщение принято на рассмотрение, "
                                           "администратор свяжетя с вами в ближайшее время.",
                          reply_markup=markups.mainMenu(message.chat.id))
