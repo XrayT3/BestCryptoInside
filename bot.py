@@ -58,6 +58,7 @@ def connect():
 
 
 def daily_check():
+    bot.send_message(const.sysadmin, "Началась ежедневная проверка")
     db = connect()
     cur = db.cursor()
     r = 'SELECT uid, end_date FROM payments'
@@ -82,8 +83,10 @@ def daily_check():
         if parser.parse(str(user[1])) <= parser.parse(today):
             text = 'Время действия вашей подписки окончено.'
             bot.send_message(user[0], text)
-            r = 'DELETE FROM payments WHERE uid=%s; INSERT INTO lost_subs(uid, end_date) VALUES (%s, %s);'
-            cur.execute(r, user[0], user[0], user[1])
+            r = 'DELETE FROM payments WHERE uid=%s'
+            cur.execute(r, user[0])
+            r = "INSERT INTO lost_subs(uid, end_date) VALUES (%s, %s)"
+            cur.execute(r, user[0], user[1])
             time.sleep(0.1)
     db.commit()
     db.close()
@@ -565,7 +568,7 @@ def paid_distribution(message):
         try:
             bot.send_message(user_id, message.text)
         except telebot.apihelper.ApiException as error:
-            bot.send_message(const.sysadmin, "547" + str(error))
+            bot.send_message(const.sysadmin, "строка 571 " + str(error.args))
         count += 1
     bot.send_message(message.chat.id, "Сообщение успешно отправлено всем пользователям!")
 
@@ -670,9 +673,14 @@ def inv_users(call):
             r = "SELECT * FROM users WHERE uid=%s"
             cur.execute(r, uid[0])
             user = cur.fetchone()
+            r = "SELECT end_date FROM payments WHERE uid=%s"
+            cur.execute(r, uid[0])
+            end_date = cur.fetchone()
             s += user[2]
             if user[3] is not None:
                 s += user[3]
+            if end_date:
+                s += ", одписка до " + end_date
             s += '\n'
             bot.edit_message_text(s, call.message.chat.id, call.message.message_id)
     else:
