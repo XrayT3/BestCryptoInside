@@ -84,9 +84,9 @@ def daily_check():
             text = 'Время действия вашей подписки окончено.'
             bot.send_message(user[0], text)
             r = 'DELETE FROM payments WHERE uid=%s'
-            cur.execute(r, user[0])
+            cur.execute(r, (user[0],))
             r = "INSERT INTO lost_subs(uid, end_date) VALUES (%s, %s)"
-            cur.execute(r, user[0], user[1])
+            cur.execute(r, (user[0], user[1]))
             time.sleep(0.1)
     db.commit()
     db.close()
@@ -289,7 +289,7 @@ def get_users(user_type):
                         s = user[2] + ' '
                         if user[3] is not None:
                             s += user[3] + ' '
-                    s += str(delta) + '%' + str(user[0])
+                    s += '(' + str(delta) + ')' + '%' + str(user[0])
                     const.userList.append(s)
         return const.userList
     elif user_type == "not_paid":
@@ -308,6 +308,23 @@ def get_users(user_type):
                         s += user[3] + ' '
                 s += '%' + str(user[0])
                 const.userList.append(s)
+        return const.userList
+    elif user_type == "lost":
+        r = "SELECT * FROM lost_subs"
+        cur.execute(r)
+        fetched = cur.fetchall()
+        const.userList.clear()
+        db.close()
+        for user in fetched:
+            if user[4] is not None:
+                s = "@" + user[4]
+            else:
+                s = user[2] + ' '
+                if user[3] is not None:
+                    s += user[3] + ' '
+            s += '%' + str(user[0])
+            const.userList.append(s)
+        const.userList.sort()
         return const.userList
     else:
         const.userList.clear()
@@ -567,8 +584,8 @@ def paid_distribution(message):
             time.sleep(1)
         try:
             bot.send_message(user_id, message.text)
-        except telebot.apihelper.ApiException as error:
-            bot.send_message(const.sysadmin, "строка 571 " + str(error.args))
+        except telebot.apihelper.ApiException:
+            continue
         count += 1
     bot.send_message(message.chat.id, "Сообщение успешно отправлено всем пользователям!")
 
@@ -680,7 +697,7 @@ def inv_users(call):
             if user[3] is not None:
                 s += user[3]
             if end_date:
-                s += ", одписка до " + end_date
+                s += ", подписка до " + end_date[0]
             s += '\n'
             bot.edit_message_text(s, call.message.chat.id, call.message.message_id)
     else:

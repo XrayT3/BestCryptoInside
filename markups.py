@@ -121,8 +121,10 @@ def usersTypes():
     btn_all = telebot.types.InlineKeyboardButton(text="Все пользователи", callback_data="users_all")
     btn_paid = telebot.types.InlineKeyboardButton(text="Пользователи купившие подписку", callback_data="users_paid")
     btn_not_paid = telebot.types.InlineKeyboardButton(text="Пользователи без подписки", callback_data="users_not_paid")
+    btn_lost = telebot.types.InlineKeyboardButton(text="Пользователи c закончившейся подпиской",
+                                                  callback_data="users_lost")
     menu = telebot.types.InlineKeyboardButton(text="Меню", callback_data="admin")
-    markup.add(btn_all, btn_paid, btn_not_paid, menu)
+    markup.add(btn_all, btn_paid, btn_not_paid, menu, btn_lost)
     return markup
 
 
