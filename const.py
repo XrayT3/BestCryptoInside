@@ -1,6 +1,5 @@
-# token = "317025779:AAFLih4bH_BjKIm8_giC-wD1geEd8d_tLCI"
-token = "352564414:AAGW7tYoe43sbYUYJ-pKhP2-gjK_hebKGF8" #old
-# token = "457162261:AAFLVZFlcHL1NoRK-OB-za-GISsW3eKRmRI"  # ТБ №7
+token = "" #
+
 
 startMsg = "Привет! Меня зовут BestCryptoInsideBot," \
            " я создан для постоянного сопровождения вас в криптовалютной биржевой торговле.\n\n" \
@@ -54,17 +53,15 @@ days30 = 0.030
 days60 = 0.055
 days90 = 0.07
 days_forever = 0.07
-# admin = 399004222 # old
 
 # ГЛАВНОГО АДМИНА В НАЧАЛО!!!!!!!!!!
 sysadmin = 256711367
 admin = [399004222, 211439710, 248835526, 256711367]  # KH9IZ ГЛАВНОГО АДМИНА В НАЧАЛО!!!!!!!!!!
-# admin = 211439710
-# admin = 248835526
+
 values = {}
 
-wallet_id = "F100744184"
-walletApiKey = "D11E68DEE967B4240CD49EBD7A1B95F6"
+wallet_id = ""
+walletApiKey = ""
 
 listPointer = 0
 userList = []
